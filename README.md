@@ -1,165 +1,515 @@
-# 🛡️ Guardian Overlay — T&C Risk Analyzer
+<div align="center">
 
-A Chrome Extension (MV3) + Node.js backend that analyzes Terms & Conditions pages for hidden risks using a 3-stage preprocessing pipeline that reduces LLM token usage by **80–95%**.
+<img src="assets/banner.png" alt="Guardian Overlay Banner" width="100%">
+
+# 🛡️ Guardian Overlay
+
+### AI-powered Terms & Conditions Risk Analyzer
+
+**Reads the fine print so you don't have to.**
+
+Guardian is a Chrome Extension that silently analyzes Terms & Conditions and Privacy Policy pages, then surfaces a color-coded risk report — right next to the Accept button — before you blindly click it.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Gemini 2.5 Flash](https://img.shields.io/badge/AI-Gemini%202.5%20Flash-4285F4?logo=google)](https://aistudio.google.com)
+[![Chrome MV3](https://img.shields.io/badge/Chrome-Manifest%20V3-yellow?logo=googlechrome)](https://developer.chrome.com/docs/extensions/mv3)
+[![Free Tier](https://img.shields.io/badge/Cost-Free%20Tier-brightgreen)](https://aistudio.google.com/apikey)
+[![Node.js](https://img.shields.io/badge/Backend-Node.js-339933?logo=nodedotjs)](https://nodejs.org)
+
+</div>
 
 ---
 
-## Architecture
+## 📋 Table of Contents
+
+- [The Problem](#-the-problem)
+- [What It Does](#-what-it-does)
+- [How It Works](#-how-it-works)
+- [Architecture](#-architecture)
+- [Token Cost Savings](#-token-cost-savings)
+- [Project Structure](#-project-structure)
+- [Prerequisites](#-prerequisites)
+- [Setup: Backend](#-setup-backend)
+- [Setup: Chrome Extension](#-setup-chrome-extension)
+- [Deploy to Production](#-deploy-to-production)
+- [Tech Stack](#-tech-stack)
+- [Roadmap](#-roadmap)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+---
+
+## 😤 The Problem
+
+Every day you click **"I Accept"** without reading a word.
+
+Hidden inside those walls of legal text:
+- 🔴 Your data being **sold to third parties**
+- 🔴 **Binding arbitration** clauses that strip your right to sue
+- 🔴 **Auto-renewing subscriptions** with buried cancellation terms
+- 🔴 Permission to access your **camera, microphone, and location**
+- 🔴 **Hidden fees** that appear months later
+
+Nobody reads Terms & Conditions. Guardian does it for you.
+
+---
+
+## 🎯 What It Does
+
+When you land on any Terms & Conditions or Privacy Policy page, Guardian automatically detects it, analyzes it, and shows you this:
+
+| Output | Description |
+|---|---|
+| 🟢🟡🔴 **Risk Level** | GREEN / YELLOW / RED verdict at a glance |
+| 🪤 **Top 3 Traps** | The most dangerous clauses, in plain English |
+| 📡 **Permissions Taken** | Every data type and device access being granted |
+| 💰 **Hidden Fees** | Auto-renewals, late fees, billing surprises |
+| ⚖️ **Arbitration Status** | Whether you're waiving your right to sue |
+
+All of this appears in a **floating overlay before you click Accept** — with zero effort on your part.
+
+---
+
+## 🧠 How It Works
+
+Guardian uses a **3-stage preprocessing pipeline** that reduces LLM token usage by **80–95%** before any AI call is made. Most work happens locally, for free, in milliseconds.
 
 ```
-Browser Tab (T&C page)
-│
-├─ content_script.js  ← isolated world, no external fetch
-│   │
-│   ├── [0] sessionStorage guard → abort if already ran this session
-│   ├── [1] Wait 6 seconds (dynamic content settles)
-│   ├── [2] chrome.storage.local URL check → return cached UI if found
-│   ├── [3] T&C page detection (URL pattern + title + keyword density)
-│   ├── [4] DOM text scraping (noise nodes removed)
-│   ├── [5] STAGE 0: Rule-based keyword extraction + deduplication
-│   ├── [6] STAGE 1: Heuristic compression → max 8,000 chars
-│   ├── [7] SHA-256 hash → hash cache check via service worker
-│   ├── [8] STAGE 2: AI gate (skip LLM if no risk triggers)
-│   ├── [9] chrome.runtime.sendMessage("ANALYZE") → service worker
-│   ├── [10] Render overlay UI
-│   └── [11] Persist URL + hash → chrome.storage.local
-│
-└─ service_worker.js  ← handles ALL external fetch (bypasses page CSP)
+Page Load
     │
-    ├── CHECK_URL    → chrome.storage.local lookup
-    ├── CHECK_HASH   → in-memory hash cache
-    ├── SAVE_URL     → persist URL → result (7-day TTL)
-    ├── SAVE_HASH    → persist hash → result
-    ├── ANALYZE      → POST /analyze to backend
-    └── GET_STATS    → popup stats
-
-Backend (Node.js/Express)
-│
-├── POST /analyze
-│   ├── Server-side STAGE 0+1 pipeline (if raw text received)
-│   ├── SHA-256 hash → server-side in-memory cache
-│   ├── STAGE 2: AI gate check
-│   └── STAGE 3: Claude Sonnet API call (only if needed)
-│
-└── GET /health
+    ▼
+sessionStorage guard ──► Already ran this session? EXIT
+    │
+    ▼
+Wait 6 seconds (let dynamic content render)
+    │
+    ▼
+chrome.storage.local check (normalized URL)
+    ├── Found + not expired ──► Show cached result instantly, EXIT
+    │
+    ▼
+Is this a T&C page? (URL pattern + title + keyword density)
+    ├── No ──► EXIT silently
+    │
+    ▼
+Scrape visible text (strip nav, footer, scripts)
+    │
+    ▼
+┌─────────────────────────────────────────────┐
+│  STAGE 0 — Rule-based extraction  FREE 0ms  │
+│  40+ legal keywords → extract paragraphs    │
+│  ± context lines → deduplicate              │
+│  200k chars ──► ~15k chars                  │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│  STAGE 1 — Heuristic compression  FREE ~1ms │
+│  Strip boilerplate, citations, short lines  │
+│  Hard cap at 8,000 characters               │
+│  15k chars ──► ~3k–6k chars                 │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+SHA-256 hash ──► Local cache hit? ──► Return instantly, EXIT
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│  STAGE 2 — AI Gate check          FREE ~1ms │
+│  No risk trigger words found?               │
+│  ──► Return GREEN immediately, no API call  │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────┐
+│  STAGE 3 — Gemini 2.5 Flash        ~2–5s   │
+│  Send ONLY compressed text                  │
+│  Strict JSON prompt → structured result     │
+└─────────────────────┬───────────────────────┘
+                      │
+                      ▼
+Render overlay UI (near Accept button if detected)
+    │
+    ▼
+Save to chrome.storage.local (7-day TTL)
+    │
+    ▼
+Mark sessionStorage = done
 ```
 
 ---
 
-## Token Cost Comparison
+## 🏗️ Architecture
 
-| Scenario | Input tokens | Output tokens | Cost (Sonnet) |
+```
+┌──────────────────────────────────────────────────────────────┐
+│                        Chrome Browser                         │
+│                                                              │
+│  ┌──────────────────────┐      ┌────────────────────────┐   │
+│  │  content_script.js   │      │   service_worker.js    │   │
+│  │   (isolated world)   │◄────►│   (extension origin)   │   │
+│  │                      │      │                        │   │
+│  │ • T&C page detection │      │ • ALL fetch() calls    │   │
+│  │ • DOM text scraping  │      │ • chrome.storage.local │   │
+│  │ • Stage 0, 1, 2      │      │ • Hash cache manager   │   │
+│  │ • Overlay UI render  │      │ • Backend API proxy    │   │
+│  └──────────────────────┘      └───────────┬────────────┘   │
+│                                             │                │
+└─────────────────────────────────────────────│────────────────┘
+                                              │ POST /analyze
+                                              ▼
+                             ┌────────────────────────────┐
+                             │      Node.js Backend        │
+                             │                            │
+                             │  • Server-side pipeline    │
+                             │  • In-memory hash cache    │
+                             │  • Gemini 2.5 Flash API    │
+                             │  • GET /health             │
+                             └────────────────────────────┘
+```
+
+### Why route all `fetch()` through the service worker?
+
+Content scripts share the host page's network stack. Banks, healthcare, and legal sites — exactly the targets — have strict Content Security Policies that **silently block** external requests from content scripts. The service worker runs under the extension origin and is completely exempt.
+
+### Why two cache layers?
+
+| Layer | Key | Scope | TTL |
 |---|---|---|---|
-| Naive — full doc to LLM | ~40,000 | ~500 | ~$0.12 |
-| Guardian pipeline | ~1,500–2,000 | ~300 | ~$0.005 |
-| Cache hit (URL or hash) | 0 | 0 | $0.00 |
-| AI gate skip (GREEN) | 0 | 0 | $0.00 |
+| URL cache | `guardian_url:<normalizedUrl>` | chrome.storage.local | 7 days |
+| Hash cache | `guardian_hash:<sha256>` | chrome.storage.local | 7 days |
+| Server cache | SHA-256 of compressed text | In-memory Map | Process lifetime |
+
+URL normalization strips query params and session tokens so `example.com/tos?ref=google&sid=abc` and `example.com/tos` map to the same key.
+
+---
+
+## 💰 Token Cost Savings
+
+| Scenario | Input Tokens | Cost (Gemini Flash) |
+|---|---|---|
+| Naive — raw doc to LLM | ~40,000 | ~$0.04 |
+| Guardian pipeline | ~1,500–2,000 | ~$0.001 |
+| Cache hit (URL or hash) | 0 | **$0.00** |
+| AI gate skip (GREEN page) | 0 | **$0.00** |
 
 **Typical reduction: 92–96% fewer tokens per analysis.**
 
+On the free tier (500 req/day), Guardian can analyze hundreds of unique documents daily at zero cost.
+
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
-guardian-extension/
-├── extension/
-│   ├── manifest.json          ← MV3 config
-│   ├── content_script.js      ← Pipeline orchestrator (isolated world)
-│   ├── service_worker.js      ← All fetch + storage operations
+guardian-overlay/
+│
+├── extension/                  ← Load this folder in Chrome
+│   ├── manifest.json           ← MV3 config, permissions
+│   ├── content_script.js       ← 13-step pipeline orchestrator
+│   ├── service_worker.js       ← All fetch + storage operations
 │   ├── popup/
-│   │   ├── popup.html         ← Extension action UI
-│   │   └── popup.js
+│   │   ├── popup.html          ← Extension action button UI
+│   │   └── popup.js            ← Cache stats + re-analyze
 │   └── icons/
-│       ├── icon16.png
-│       ├── icon48.png
-│       └── icon128.png
+│       ├── icon16.png          ← 16×16 toolbar icon
+│       ├── icon48.png          ← 48×48 extensions page icon
+│       └── icon128.png         ← 128×128 Chrome Web Store icon
+│
 ├── backend/
-│   ├── server.js              ← Express API + 3-stage pipeline
-│   └── package.json
-├── vercel.json                ← One-command deploy config
+│   ├── server.js               ← Express API + pipeline + Gemini
+│   ├── package.json
+│   ├── package-lock.json
+│   └── .env.example            ← Copy to .env and add your key
+│
+├── .gitignore
+├── vercel.json                 ← Zero-config Vercel deployment
 └── README.md
 ```
 
 ---
 
-## Setup
+## ✅ Prerequisites
 
-### 1. Backend
+Before you begin, make sure you have:
+
+- [Node.js](https://nodejs.org/) **v18 or higher** — [Download](https://nodejs.org/en/download)
+- [Google Chrome](https://www.google.com/chrome/) browser
+- A free **Gemini API key** — get one at [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+  - No credit card required
+  - Free tier: **500 requests/day**
+- [Git](https://git-scm.com/downloads) (to clone the repo)
+
+---
+
+## 🔧 Setup: Backend
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/DarkPhoenix042006/guardian-overlay.git
+cd guardian-overlay
+```
+
+### 2. Install dependencies
 
 ```bash
 cd backend
 npm install
-ANTHROPIC_API_KEY=sk-ant-... node server.js
-# Server runs at http://localhost:3000
 ```
 
-**Deploy to Vercel (free tier):**
+### 3. Get your free Gemini API key
+
+1. Go to **[https://aistudio.google.com/apikey](https://aistudio.google.com/apikey)**
+2. Sign in with any Google account
+3. Click **"Create API Key"**
+4. Copy the key — it starts with `AIza...`
+
+### 4. Configure environment variables
+
 ```bash
-# From project root:
+# Copy the example file
+cp .env.example .env
+```
+
+Open `.env` and paste your key:
+
+```env
+GEMINI_API_KEY=AIza...your-key-here
+PORT=3000
+```
+
+> ⚠️ Never commit the `.env` file. It's already in `.gitignore`.
+
+### 5. Start the server
+
+**Windows (Command Prompt):**
+```cmd
+npm start
+```
+
+**Windows (PowerShell):**
+```powershell
+npm start
+```
+
+**Mac / Linux:**
+```bash
+npm start
+```
+
+You should see:
+```
+[Guardian backend] Running on http://localhost:3000
+```
+
+### 6. Verify it's working
+
+Open a **second terminal** and run:
+
+**Health check:**
+```bash
+curl http://localhost:3000/health
+```
+```json
+{ "status": "ok", "cacheSize": 0 }
+```
+
+**Full pipeline test:**
+
+Windows CMD:
+```cmd
+curl -X POST http://localhost:3000/analyze -H "Content-Type: application/json" -d "{\"text\":\"Your subscription will automatically renew monthly. We use binding arbitration and waive class action rights. We collect your location, camera, and microphone data and may sell it to third parties. Late payment fees of $35 apply.\"}"
+```
+
+Mac / Linux / PowerShell:
+```bash
+curl -X POST http://localhost:3000/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Your subscription will automatically renew monthly. We use binding arbitration and waive class action rights. We collect your location, camera, and microphone data and may sell it to third parties. Late payment fees of $35 apply."}'
+```
+
+**Expected response:**
+```json
+{
+  "risk_level": "RED",
+  "traps": [
+    "Binding arbitration waives your right to a jury trial",
+    "Personal data including location and biometrics sold to third parties",
+    "Subscription auto-renews monthly with no clear cancellation process"
+  ],
+  "permissions": ["location data", "camera data", "microphone data"],
+  "hidden_fees": ["$35 late payment fee"],
+  "arbitration": "present",
+  "summary": "This service uses binding arbitration, sells personal data, and has auto-renewing subscriptions with hidden fees.",
+  "cached": false,
+  "metrics": {
+    "rawChars": 312,
+    "compressedChars": 312,
+    "reductionPct": 0
+  },
+  "ms": 3241
+}
+```
+
+If you see `risk_level: RED` — your backend is fully working. ✅
+
+---
+
+## 🔌 Setup: Chrome Extension
+
+### 1. Point the extension at your backend
+
+Open `extension/service_worker.js` and update line 20:
+
+```js
+// Local development:
+const BACKEND_URL = "http://localhost:3000/analyze";
+
+// Production (after deploying — see below):
+// const BACKEND_URL = "https://your-app.vercel.app/analyze";
+```
+
+### 2. Add extension icons
+
+Add three PNG icon files to `extension/icons/`:
+
+| File | Size | Purpose |
+|---|---|---|
+| `icon16.png` | 16×16 px | Toolbar icon |
+| `icon48.png` | 48×48 px | Extensions management page |
+| `icon128.png` | 128×128 px | Chrome Web Store |
+
+> Free icons: [Icons8](https://icons8.com/icons/set/shield) · [Flaticon](https://www.flaticon.com/search?word=shield) · Any shield/security PNG works.
+
+### 3. Load the extension in Chrome
+
+1. Open Chrome and navigate to `chrome://extensions/`
+2. Enable **Developer mode** — toggle in the top-right corner
+3. Click **"Load unpacked"**
+4. Select the `extension/` folder from this project
+5. The Guardian shield icon appears in your Chrome toolbar ✅
+
+### 4. Test on a real T&C page
+
+Navigate to any of these — Guardian activates automatically after 6 seconds:
+
+- https://www.spotify.com/legal/end-user-agreement/
+- https://discord.com/terms
+- https://www.tiktok.com/legal/page/us/terms-of-service/en
+- https://twitter.com/en/tos
+
+A risk overlay appears in the **bottom-right corner** of the page.
+
+---
+
+## 🚀 Deploy to Production
+
+### Option A — Vercel (recommended, free)
+
+```bash
+# Install Vercel CLI
+npm install -g vercel
+
+# From the project root
 vercel
-vercel env add ANTHROPIC_API_KEY
+
+# Add your API key securely — never in code
+vercel env add GEMINI_API_KEY
+
+# Deploy
 vercel --prod
 ```
 
-### 2. Extension
+Your backend is live at `https://your-project.vercel.app`.
 
-1. Open `extension/service_worker.js`
-2. Replace `BACKEND_URL` with your deployed backend URL:
-   ```js
-   const BACKEND_URL = "https://your-guardian-backend.vercel.app/analyze";
-   ```
-3. Add icons to `extension/icons/` (16x16, 48x48, 128x128 PNG)
-4. Open Chrome → `chrome://extensions/`
-5. Enable **Developer mode** (top right)
-6. Click **Load unpacked** → select the `extension/` folder
+Update `service_worker.js`:
+```js
+const BACKEND_URL = "https://your-project.vercel.app/analyze";
+```
 
----
+### Option B — Railway
 
-## How the Pipeline Works
+1. Push this repo to GitHub (already done ✅)
+2. Go to [railway.app](https://railway.app) → **New Project** → **Deploy from GitHub**
+3. Select this repo, set root directory to `backend/`
+4. Add `GEMINI_API_KEY` in Railway's environment variables panel
+5. Auto-deploys on every push to `main` 🚀
 
-### Stage 0 — Rule-Based Extraction (0ms, $0)
-Scans the raw page text for 40+ legal risk keywords (arbitration, billing, permissions, data sharing, etc.). Extracts matching paragraphs plus ±1 surrounding paragraphs for context. Deduplicates identical lines.
+### Option C — Local + ngrok (quick sharing)
 
-**Typical reduction:** 200k chars → 15k chars
+```bash
+# Terminal 1 — server running
+npm start
 
-### Stage 1 — Heuristic Compression (1ms, $0)
-- Strips redundant boilerplate via regex (cookie banners, "please read carefully", copyright notices)
-- Removes legal citations like "Section 4.2(a)"
-- Drops lines under 40 characters (navigation fragments)
-- Hard caps at 8,000 characters
+# Terminal 2 — expose to internet
+npx ngrok http 3000
+```
 
-**Typical reduction:** 15k chars → 3k–6k chars
-
-### Stage 2 — AI Gate (1ms, $0)
-Checks if 15 high-risk trigger words appear in compressed text. If none match → returns GREEN immediately. No API call made.
-
-### Stage 3 — LLM Analysis (2–5s, ~$0.005)
-Sends only the compressed text with a strict JSON-schema prompt. Response is validated and normalized before caching.
+Use the ngrok HTTPS URL as your `BACKEND_URL`.
 
 ---
 
-## Caching Strategy
+## 🛠️ Tech Stack
 
-Two independent cache layers prevent redundant API calls:
-
-| Layer | Key | Scope | TTL |
-|---|---|---|---|
-| URL cache | `guardian_url:<normalizedUrl>` | chrome.storage.local | 7 days |
-| Hash cache | `guardian_hash:<sha256>` | chrome.storage.local + server memory | 7 days |
-| Server cache | SHA-256 of compressed text | In-memory Map (1000 entries) | Process lifetime |
-
-URL normalization strips query params, hash fragments, and trailing slashes so `example.com/tos?ref=google` and `example.com/tos` map to the same key.
+| Layer | Technology | Why |
+|---|---|---|
+| Extension | Chrome Manifest V3 | Modern, secure, CSP-safe architecture |
+| Content Pipeline | Vanilla JS | Zero deps, runs in isolated world |
+| Service Worker | Chrome Service Worker | Bypasses host-page CSP for all fetches |
+| Backend | Node.js + Express | Lightweight, deploys anywhere |
+| AI Model | Gemini 2.5 Flash | Best free tier — 500 req/day, no card |
+| Preprocessing | Rule-based + Regex | 92–96% token reduction before AI |
+| Caching | SHA-256 + chrome.storage | Prevents redundant API calls |
+| Deployment | Vercel | Zero-config, free tier |
 
 ---
 
-## Key MV3 Decisions
+## 🗺️ Roadmap
 
-**Why route all fetch through the service worker?**
-Content scripts run in an isolated world but share the host page's network stack. If the T&C page has a strict CSP (common on financial/healthcare sites), `fetch()` calls from the content script to external domains get blocked. The service worker runs in the extension origin and is exempt from host-page CSP.
+- [ ] Add demo GIF to README
+- [ ] Firefox support (MV2 port)
+- [ ] PDF Terms & Conditions support
+- [ ] Popup showing history of analyzed pages
+- [ ] Export risk report as PDF
+- [ ] Support for non-English T&Cs
+- [ ] Chrome Web Store publish
 
-**Why sessionStorage for the per-session guard?**
-`chrome.storage.local` persists across restarts — good for the 7-day URL cache. But we also want to skip re-running if the user navigates back to the same tab in the same session. `sessionStorage` is per-tab and auto-clears when the tab closes, making it the right tool for this guard.
+---
 
-**Why SHA-256 both client and server side?**
-The extension computes the hash before the API call to check local storage. The server computes it again as a race-condition guard (two tabs opening the same page simultaneously would otherwise both make API calls).
+## 🤝 Contributing
+
+Contributions are welcome!
+
+```bash
+# 1. Fork the repo on GitHub
+
+# 2. Clone your fork
+git clone https://github.com/YOUR_USERNAME/guardian-overlay.git
+
+# 3. Create a feature branch
+git checkout -b feature/your-feature-name
+
+# 4. Make changes and commit
+git add .
+git commit -m "feat: describe your change"
+
+# 5. Push and open a Pull Request
+git push origin feature/your-feature-name
+```
+
+---
+
+## 📄 License
+
+MIT License — see [LICENSE](LICENSE) for details.
+
+---
+
+<div align="center">
+
+Built for hackathon &nbsp;·&nbsp; Powered by Gemini 2.5 Flash &nbsp;·&nbsp; Free tier friendly
+
+**If this helped you, drop a ⭐ — it means a lot!**
+
+</div>
