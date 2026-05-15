@@ -1,0 +1,8 @@
+# Secret keys - NEVER commit these
+backend/.env
+backend/node_modules/
+.env
+
+# OS noise
+.DS_Store
+Thumbs.db
