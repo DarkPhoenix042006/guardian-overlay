@@ -33,7 +33,7 @@ Guardian is a Chrome Extension that silently analyzes Terms & Conditions and Pri
 - [Setup: Chrome Extension](#-setup-chrome-extension)
 - [Deploy to Production](#-deploy-to-production)
 - [Tech Stack](#-tech-stack)
-- [Roadmap](#-roadmap)
+- [Roadmap](#-planned)
 - [Contributing](#-contributing)
 - [License](#-license)
 
@@ -122,7 +122,7 @@ SHA-256 hash ──► Local cache hit? ──► Return instantly, EXIT
                       │
                       ▼
 ┌─────────────────────────────────────────────┐
-│  STAGE 3 — Gemini 2.5 Flash        ~2–5s   │
+│  STAGE 3 — Gemini 2.5 Flash        ~2–5s    │
 │  Send ONLY compressed text                  │
 │  Strict JSON prompt → structured result     │
 └─────────────────────┬───────────────────────┘
@@ -142,24 +142,24 @@ Mark sessionStorage = done
 ## 🏗️ Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                        Chrome Browser                         │
-│                                                              │
-│  ┌──────────────────────┐      ┌────────────────────────┐   │
-│  │  content_script.js   │      │   service_worker.js    │   │
-│  │   (isolated world)   │◄────►│   (extension origin)   │   │
-│  │                      │      │                        │   │
-│  │ • T&C page detection │      │ • ALL fetch() calls    │   │
-│  │ • DOM text scraping  │      │ • chrome.storage.local │   │
-│  │ • Stage 0, 1, 2      │      │ • Hash cache manager   │   │
-│  │ • Overlay UI render  │      │ • Backend API proxy    │   │
-│  └──────────────────────┘      └───────────┬────────────┘   │
-│                                             │                │
-└─────────────────────────────────────────────│────────────────┘
-                                              │ POST /analyze
-                                              ▼
+┌────────────────────────────────────────────────────────────┐
+│                        Chrome Browser                      │
+│                                                            │
+│  ┌──────────────────────┐      ┌────────────────────────┐  │
+│  │  content_script.js   │      │   service_worker.js    │  │
+│  │   (isolated world)   │◄────►│   (extension origin)   │  │
+│  │                      │      │                        │  │
+│  │ • T&C page detection │      │ • ALL fetch() calls    │  │
+│  │ • DOM text scraping  │      │ • chrome.storage.local │  │
+│  │ • Stage 0, 1, 2      │      │ • Hash cache manager   │  │
+│  │ • Overlay UI render  │      │ • Backend API proxy    │  │
+│  └──────────────────────┘      └───────────┬────────────┘  │
+│                                            │               │
+└────────────────────────────────────────────│───────────────┘
+                                             │ POST /analyze
+                                             ▼
                              ┌────────────────────────────┐
-                             │      Node.js Backend        │
+                             │      Node.js Backend       │
                              │                            │
                              │  • Server-side pipeline    │
                              │  • In-memory hash cache    │
@@ -263,7 +263,7 @@ npm install
 1. Go to **[https://aistudio.google.com/apikey](https://aistudio.google.com/apikey)**
 2. Sign in with any Google account
 3. Click **"Create API Key"**
-4. Copy the key — it starts with `AIza...`
+4. Copy the key — it starts with `AIza...(example)`
 
 ### 4. Configure environment variables
 
@@ -279,7 +279,6 @@ GEMINI_API_KEY=AIza...your-key-here
 PORT=3000
 ```
 
-> ⚠️ Never commit the `.env` file. It's already in `.gitignore`.
 
 ### 5. Start the server
 
@@ -428,15 +427,7 @@ Update `service_worker.js`:
 const BACKEND_URL = "https://your-project.vercel.app/analyze";
 ```
 
-### Option B — Railway
-
-1. Push this repo to GitHub (already done ✅)
-2. Go to [railway.app](https://railway.app) → **New Project** → **Deploy from GitHub**
-3. Select this repo, set root directory to `backend/`
-4. Add `GEMINI_API_KEY` in Railway's environment variables panel
-5. Auto-deploys on every push to `main` 🚀
-
-### Option C — Local + ngrok (quick sharing)
+### Option B — Local + ngrok (quick sharing)
 
 ```bash
 # Terminal 1 — server running
@@ -464,22 +455,20 @@ Use the ngrok HTTPS URL as your `BACKEND_URL`.
 | Deployment | Vercel | Zero-config, free tier |
 
 ---
+## Planned
 
-## 🗺️ Roadmap
-
-- [ ] Add demo GIF to README
-- [ ] Firefox support (MV2 port)
-- [ ] PDF Terms & Conditions support
-- [ ] Popup showing history of analyzed pages
-- [ ] Export risk report as PDF
-- [ ] Support for non-English T&Cs
-- [ ] Chrome Web Store publish
+ - PDF Terms & Conditions support — upload a PDF, get the same analysis
+ - History popup — see every T&C you've had analyzed with their risk scores
+ - Multi-language support — not everyone's T&Cs are in English
+ - Export risk report as PDF — useful for sharing or keeping records
+ - Chrome Web Store publish — so anyone can install it in one click
+ - Crowdsourced results — if 1000 people analyzed "for example:Spotify's T&C", share that cached result instantly with no API call 
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome!
+Contributions are welcome and i would love to know ur thoughts!
 
 ```bash
 # 1. Fork the repo on GitHub
