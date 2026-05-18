@@ -2,76 +2,234 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Guardian</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      width: 280px;
+      width: 320px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       font-size: 13px;
-      color: #111827;
-      background: #fff;
+      background: #0f0f1a;
+      color: #e2e8f0;
+      min-height: 200px;
     }
+
+    /* ── Header ── */
     .header {
       padding: 14px 16px 12px;
-      border-bottom: 1px solid #f3f4f6;
+      border-bottom: 1px solid #ffffff10;
       display: flex;
       align-items: center;
-      gap: 10px;
+      justify-content: space-between;
     }
-    .logo { font-size: 22px; }
-    .title { font-size: 14px; font-weight: 600; color: #111827; }
-    .sub   { font-size: 11px; color: #9ca3af; margin-top: 1px; }
-    .section { padding: 12px 16px; border-bottom: 1px solid #f3f4f6; }
-    .label { font-size: 11px; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }
-    .stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .stat-val { font-size: 15px; font-weight: 600; color: #111827; }
-    .stat-key { font-size: 12px; color: #6b7280; }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .logo { font-size: 26px; line-height: 1; }
+    .title { font-size: 15px; font-weight: 700; color: #f1f5f9; }
+    .sub   { font-size: 11px; color: #475569; margin-top: 2px; }
+    .version { font-size: 10px; background: #1e293b; color: #64748b;
+      padding: 2px 7px; border-radius: 5px; }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #ffffff10;
+      background: #0f0f1a;
+    }
+    .tab {
+      flex: 1; padding: 9px 0; font-size: 12px; font-weight: 500;
+      background: none; border: none; cursor: pointer;
+      color: #475569; border-bottom: 2px solid transparent;
+      transition: color .15s, border-color .15s;
+    }
+    .tab.active { color: #818cf8; border-bottom-color: #818cf8; }
+    .tab:hover:not(.active) { color: #94a3b8; }
+
+    /* ── Tab panels ── */
+    .panel { display: none; padding: 14px 16px; }
+    .panel.active { display: block; }
+
+    /* ── Toggle row ── */
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #1e1e2e; border-radius: 10px; padding: 11px 14px;
+      margin-bottom: 10px; border: 1px solid #ffffff0d;
+    }
+    .toggle-label { font-size: 13px; font-weight: 500; color: #e2e8f0; }
+    .toggle-sub   { font-size: 11px; color: #475569; margin-top: 2px; }
+
+    /* Toggle switch */
+    .switch { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; inset: 0; background: #334155;
+      border-radius: 22px; cursor: pointer; transition: .25s;
+    }
+    .slider:before {
+      content: ""; position: absolute;
+      width: 16px; height: 16px; left: 3px; bottom: 3px;
+      background: white; border-radius: 50%; transition: .25s;
+    }
+    input:checked + .slider { background: #6366f1; }
+    input:checked + .slider:before { transform: translateX(18px); }
+
+    /* ── Stats grid ── */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .stat-card {
+      background: #1e1e2e; border-radius: 10px; padding: 10px 12px;
+      border: 1px solid #ffffff0d;
+    }
+    .stat-val { font-size: 22px; font-weight: 700; color: #818cf8; }
+    .stat-key { font-size: 11px; color: #475569; margin-top: 2px; }
+
+    /* ── Buttons ── */
     .btn {
-      display: block; width: 100%; padding: 8px 12px;
-      background: #f9fafb; border: 1px solid #e5e7eb;
-      border-radius: 8px; font-size: 13px; color: #374151;
-      cursor: pointer; text-align: left; margin-bottom: 6px;
-      transition: background .15s;
+      display: flex; align-items: center; gap: 7px;
+      width: 100%; padding: 9px 13px; margin-bottom: 7px;
+      background: #1e1e2e; border: 1px solid #ffffff0d;
+      border-radius: 9px; font-size: 12.5px; color: #cbd5e1;
+      cursor: pointer; transition: background .15s, border-color .15s;
+      text-align: left;
     }
-    .btn:hover { background: #f3f4f6; }
-    .btn.danger { color: #dc2626; border-color: #fecaca; background: #fff; }
-    .btn.danger:hover { background: #fef2f2; }
-    .footer { padding: 10px 16px; font-size: 11px; color: #d1d5db; text-align: center; }
-    #status { padding: 8px 16px; font-size: 12px; color: #166534; background: #f0fdf4; border-top: 1px solid #bbf7d0; display: none; }
+    .btn:hover { background: #252540; border-color: #6366f150; }
+    .btn.primary { background: #4f46e5; border-color: #6366f1; color: white; font-weight: 600; }
+    .btn.primary:hover { background: #4338ca; }
+    .btn.danger { color: #fca5a5; border-color: #991b1b30; }
+    .btn.danger:hover { background: #1a0a0a; border-color: #991b1b; }
+
+    /* ── History list ── */
+    .history-list { display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow-y: auto; }
+    .history-item {
+      display: flex; align-items: center; gap: 9px;
+      background: #1e1e2e; border-radius: 9px; padding: 9px 11px;
+      border: 1px solid #ffffff0d; cursor: default;
+    }
+    .history-badge { font-size: 16px; flex-shrink: 0; line-height: 1; }
+    .history-url {
+      flex: 1; font-size: 11.5px; color: #94a3b8;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .history-title { font-size: 12px; font-weight: 500; color: #e2e8f0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-time { font-size: 10px; color: #475569; flex-shrink: 0; }
+    .history-empty { text-align: center; padding: 30px 0; color: #475569; font-size: 13px; }
+
+    /* ── Toast ── */
+    #toast {
+      display: none; padding: 9px 14px; font-size: 12px;
+      border-top: 1px solid #ffffff10; color: #86efac;
+      background: #052e16; text-align: center;
+    }
   </style>
 </head>
 <body>
+
   <div class="header">
-    <div class="logo">🛡️</div>
-    <div>
-      <div class="title">Guardian Overlay</div>
-      <div class="sub">T&amp;C Risk Analyzer</div>
+    <div class="header-left">
+      <div class="logo">🚦</div>
+      <div>
+        <div class="title">Guardian Overlay</div>
+        <div class="sub">T&amp;C Risk Analyzer</div>
+      </div>
+    </div>
+    <span class="version">v2.0</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="home">⚙️ Settings</button>
+    <button class="tab"        data-tab="history">📜 History</button>
+    <button class="tab"        data-tab="about">ℹ️ About</button>
+  </div>
+
+  <!-- ── SETTINGS PANEL ── -->
+  <div class="panel active" id="panel-home">
+
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-label">Auto-scan T&amp;C pages</div>
+        <div class="toggle-sub">Automatically analyze when a T&amp;C page is detected</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="toggle-autoscan" checked />
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-val" id="stat-urls">—</div>
+        <div class="stat-key">Pages analyzed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="stat-history">—</div>
+        <div class="stat-key">History entries</div>
+      </div>
+    </div>
+
+    <button class="btn primary" id="btn-analyze">
+      🔍 Analyze current tab now
+    </button>
+    <button class="btn" id="btn-clear-cache">
+      🗑️ Clear cache
+    </button>
+
+  </div>
+
+  <!-- ── HISTORY PANEL ── -->
+  <div class="panel" id="panel-history">
+    <div class="history-list" id="history-list">
+      <div class="history-empty">No history yet.<br>Visit a T&amp;C page to get started.</div>
+    </div>
+    <div style="margin-top:10px">
+      <button class="btn danger" id="btn-clear-history">🗑️ Clear history</button>
     </div>
   </div>
 
-  <div class="section">
-    <div class="label">Cache Stats</div>
-    <div class="stat-row">
-      <span class="stat-key">URLs analyzed</span>
-      <span class="stat-val" id="url-count">—</span>
+  <!-- ── ABOUT PANEL ── -->
+  <div class="panel" id="panel-about">
+    <div style="text-align:center;padding:10px 0 16px">
+      <div style="font-size:40px;margin-bottom:8px">🚦</div>
+      <div style="font-weight:700;font-size:15px;color:#f1f5f9">Guardian Overlay</div>
+      <div style="font-size:11px;color:#475569;margin-top:4px">v2.0 · Powered by Gemini 2.5 Flash</div>
     </div>
-    <div class="stat-row">
-      <span class="stat-key">Unique documents</span>
-      <span class="stat-val" id="hash-count">—</span>
+
+    <div style="background:#1e1e2e;border-radius:10px;padding:12px 14px;
+      border:1px solid #ffffff0d;font-size:12px;color:#94a3b8;line-height:1.7;margin-bottom:10px">
+      Guardian reads Terms &amp; Conditions so you don't have to.<br><br>
+      It uses a <strong style="color:#818cf8">3-stage pipeline</strong> to reduce token usage by
+      <strong style="color:#86efac">80–95%</strong> before any AI call is made —
+      keeping costs near zero while delivering accurate risk analysis.
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:6px;font-size:12px">
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #ffffff08">
+        <span style="color:#475569">Stage 0 — Rule extraction</span>
+        <span style="color:#86efac">Free · 0ms</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #ffffff08">
+        <span style="color:#475569">Stage 1 — Compression</span>
+        <span style="color:#86efac">Free · ~1ms</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #ffffff08">
+        <span style="color:#475569">Stage 2 — AI gate</span>
+        <span style="color:#86efac">Free · ~1ms</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0">
+        <span style="color:#475569">Stage 3 — Gemini Flash</span>
+        <span style="color:#fcd34d">~2–5s · free tier</span>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;text-align:center">
+      <a href="https://github.com/DarkPhoenix042006/guardian-overlay"
+         target="_blank"
+         style="font-size:11.5px;color:#818cf8;text-decoration:none">
+        ⭐ Star on GitHub
+      </a>
     </div>
   </div>
 
-  <div class="section">
-    <div class="label">Actions</div>
-    <button class="btn" id="btn-analyze">🔍 Re-analyze current tab</button>
-    <button class="btn danger" id="btn-clear">🗑️ Clear all cached results</button>
-  </div>
-
-  <div id="status"></div>
-
-  <div class="footer">Guardian v1.0 · Powered by Claude</div>
+  <div id="toast"></div>
 
   <script src="popup.js"></script>
 </body>

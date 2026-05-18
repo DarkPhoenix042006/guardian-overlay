@@ -1,13 +1,14 @@
 {
   "manifest_version": 3,
   "name": "Guardian Overlay — T&C Risk Analyzer",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Analyzes Terms & Conditions pages for hidden risks, arbitration clauses, and data permissions.",
 
   "permissions": [
     "storage",
     "activeTab",
-    "scripting"
+    "scripting",
+    "contextMenus"
   ],
 
   "host_permissions": [
@@ -42,13 +43,6 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-
-  "web_accessible_resources": [
-    {
-      "resources": ["overlay.html"],
-      "matches": ["<all_urls>"]
-    }
-  ],
 
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
