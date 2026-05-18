@@ -1,17 +1,24 @@
-<a href="https://github.com/user-attachments/assets/3d398bc1-d26e-448e-ac92-c929d8348eb4">
-  <img src="https://github.com/user-attachments/assets/3d398bc1-d26e-448e-ac92-c929d8348eb4" alt="Screenshot" width="400">
+# <h1 align="center">🛡️ Guardian Overlay</h1>
+<p align="center">
+  <a href="https://github.com/user-attachments/assets/454500b9-f01d-4fd6-ad5f-fbec1b6d638e">
+    <img src="https://github.com/user-attachments/assets/454500b9-f01d-4fd6-ad5f-fbec1b6d638e" alt="Screenshot"
+      width="300"></a>
+  <a href="https://github.com/user-attachments/assets/65474ad1-d1ff-4308-909f-bff054e61279">
+    <img src="https://github.com/user-attachments/assets/65474ad1-d1ff-4308-909f-bff054e61279" alt="Screenshot"
+      width="295">
+  </a>
+</p>
+<p align="center">
+  <a href="https://github.com/user-attachments/assets/3d398bc1-d26e-448e-ac92-c929d8348eb4">
+    <img src="https://github.com/user-attachments/assets/3d398bc1-d26e-448e-ac92-c929d8348eb4" alt="Screenshot"
+      width="200">
+  </a>
+  <a href="https://github.com/user-attachments/assets/9ef3cb07-ac24-499d-b798-cf2e7321391c">
+    <img src="https://github.com/user-attachments/assets/9ef3cb07-ac24-499d-b798-cf2e7321391c" alt="Screenshot"
+      width="200">
 </a>
-<a href="https://github.com/user-attachments/assets/9ef3cb07-ac24-499d-b798-cf2e7321391c">
-  <img src="https://github.com/user-attachments/assets/9ef3cb07-ac24-499d-b798-cf2e7321391c" alt="Screenshot" width="400">
-</a>
-<a href="https://github.com/user-attachments/assets/454500b9-f01d-4fd6-ad5f-fbec1b6d638e">
-  <img src="https://github.com/user-attachments/assets/454500b9-f01d-4fd6-ad5f-fbec1b6d638e" alt="Screenshot" width="300">
-</a>
-<a href="https://github.com/user-attachments/assets/65474ad1-d1ff-4308-909f-bff054e61279">
-  <img src="https://github.com/user-attachments/assets/65474ad1-d1ff-4308-909f-bff054e61279" alt="Screenshot" width="300">
-</a>
+</p>
 
-# 🛡️ Guardian Overlay
 
 ### AI-powered Terms & Conditions Risk Analyzer
 
@@ -34,15 +41,15 @@ Guardian is a Chrome Extension that silently analyzes Terms & Conditions and Pri
 - [The Problem](#-the-problem)
 - [What It Does](#-what-it-does)
 - [How It Works](#-how-it-works)
-- [Architecture](#-architecture)
+- [Architecture](#%EF%B8%8F-architecture)
 - [Token Cost Savings](#-token-cost-savings)
 - [Project Structure](#-project-structure)
 - [Prerequisites](#-prerequisites)
 - [Setup: Backend](#-setup-backend)
 - [Setup: Chrome Extension](#-setup-chrome-extension)
 - [Deploy to Production](#-deploy-to-production)
-- [Tech Stack](#-tech-stack)
-- [Roadmap](#-planned)
+- [Tech Stack](#%EF%B8%8F-tech-stack)
+- [Planned](#planned)
 - [Contributing](#-contributing)
 - [License](#-license)
 
